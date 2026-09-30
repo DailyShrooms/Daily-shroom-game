@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Daily Shrooms - Cinematic Lifestyle & Mushroom Profiler</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#080c0a',
+              card: 'rgba(18, 26, 22, 0.85)',
+              primary: '#2d4a3e',
+              emerald: '#10b981',
+              gold: '#d4af37',
+              goldLight: '#fef1b8',
+              accent: '#e2b857'
+            }
+          },
+          fontFamily: {
+            cinzel: ['Cinzel', 'serif'],
+            sans: ['Plus Jakarta Sans', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    
+    body {
+      background-color: #080c0a;
+      color: #f3f4f6;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 50% 15%, rgba(45, 74, 62, 0.45) 0%, transparent 60%),
+        radial-gradient(circle at 85% 85%, rgba(212, 175, 55, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 15% 75%, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    /* Ambient Glow Effects */
+    .glow-gold {
+      text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+    }
+    
+    .box-glow {
+      box-shadow: 0 0 35px rgba(212, 175, 55, 0.15), inset 0 0 15px rgba(212, 175, 55, 0.05);
+    }
+
+    .wheel-glow-ring {
+      position: absolute;
+      width: 390px;
+      height: 390px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(212, 175, 55, 0.25) 0%, rgba(16, 185, 129, 0.05) 50%, transparent 70%);
+      animation: pulseGlow 4s infinite alternate ease-in-out;
+      pointer-events: none;
+    }
+
+    @keyframes pulseGlow {
+      0% { transform: scale(0.96); opacity: 0.6; }
+      100% { transform: scale(1.05); opacity: 0.95; }
+    }
+
+    /* Pointer Animation */
+    .pointer-bounce {
+      transform-origin: 50% 15%;
+      transition: transform 0.08s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    /* Shroom Floating Animation */
+    @keyframes floatElement {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(2deg); }
+    }
+
+    .animate-float {
+      animation: floatElement 3.5s infinite ease-in-out;
+    }
+
+    /* Custom Glassmorphic Card */
+    .glass-card {
+      background: rgba(18, 26, 22, 0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-start min-h-screen px-4 py-8 relative">
+
+  <canvas id="bg-particles" class="fixed top-0 left-0 w-full h-full pointer-events-none z-0"></canvas>
+
+  <main class="relative z-10 w-full max-w-2xl flex flex-col items-center">
+
+    <header class="text-center mb-6">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-primary/40 border border-brand-gold/30 text-brand-goldLight text-xs tracking-widest uppercase mb-2">
+        <span>✨ Interactive Profiler</span>
+      </div>
+      <h1 class="font-cinzel text-3xl sm:text-4xl md:text-5xl font-black tracking-wider bg-gradient-to-r from-white via-brand-goldLight to-brand-gold bg-clip-text text-transparent glow-gold">
+        DAILY SHROOMS
+      </h1>
+      <p class="text-gray-400 text-sm sm:text-base mt-2 max-w-md mx-auto">
+        Spin to discover your lifestyle match & get custom 7-in-1 functional mushroom recommendations!
+      </p>
+    </header>
+
+    <div class="glass-card rounded-full px-6 py-3 flex items-center justify-between gap-6 mb-8 box-glow w-full max-w-md">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-brand-gold/20 flex items-center justify-center text-brand-gold border border-brand-gold/40 text-lg">
+          🪙
+        </div>
+        <div>
+          <div class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Your Balance</div>
+          <div class="font-cinzel font-bold text-xl text-brand-goldLight leading-none">
+            <span id="points-display">0</span> <span class="text-xs text-brand-gold">PTS</span>
+          </div>
+        </div>
+      </div>
+
+      <button id="redeem-btn" onclick="redeemPoints()" class="bg-gradient-to-r from-brand-gold to-yellow-600 hover:from-yellow-400 hover:to-brand-gold text-black font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-full transition-all duration-300 shadow-lg hover:shadow-brand-gold/30 hover:-translate-y-0.5 active:translate-y-0">
+        Convert Coupon
+      </button>
+    </div>
+
+    <div class="relative w-[340px] h-[340px] sm:w-[380px] sm:h-[380px] flex items-center justify-center mb-8">
+      <div class="wheel-glow-ring"></div>
+
+      <!-- Ticker Pointer -->
+      <div id="pointer" class="pointer-bounce absolute -top-4 z-20 filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
+        <svg class="w-9 h-11 fill-brand-goldLight stroke-brand-dark" stroke-width="1.5" viewBox="0 0 24 32">
+          <path d="M12 32 L2 6 C0 3 2 0 6 0 L18 0 C22 0 24 3 22 6 Z" />
+        </svg>
+      </div>
+
+      <!-- Wheel Canvas -->
+      <canvas id="wheel" width="380" height="380" class="rounded-full shadow-2xl border-4 border-brand-gold/30"></canvas>
+    </div>
+
+    <!-- Spin Button -->
+    <button id="spin-btn" onclick="spinWheel()" class="relative group bg-gradient-to-r from-emerald-600 via-brand-emerald to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-cinzel font-bold text-lg tracking-widest px-10 py-4 rounded-full border border-white/20 shadow-[0_0_30px_rgba(16,185,129,0.4)] transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none disabled:transform-none">
+      <span class="relative z-10">SPIN THE WHEEL</span>
+      <div class="absolute inset-0 rounded-full bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity blur-md"></div>
+    </button>
+
+    <div id="result-card" class="glass-card rounded-3xl p-6 sm:p-8 mt-8 w-full hidden opacity-0 transform translate-y-6 transition-all duration-700 ease-out box-glow">
+      <div class="text-center">
+        <!-- Lifestyle Badge -->
+        <span id="res-lifestyle-badge" class="inline-block bg-brand-gold/15 border border-brand-gold/40 text-brand-goldLight text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">
+          Lifestyle Persona
+        </span>
+
+        <!-- Shroom Emoji/Icon -->
+        <div id="res-icon" class="text-5xl sm:text-6xl my-2 animate-float filter drop-shadow-[0_0_15px_rgba(212,175,55,0.4)]">
+          🍄
+        </div>
+
+        <!-- Mushroom Recommendation Header -->
+        <div class="text-xs uppercase tracking-widest text-emerald-400 font-semibold mb-1">
+          Recommended Mushroom Match
+        </div>
+        <h2 id="res-shroom-title" class="font-cinzel text-2xl sm:text-3xl font-extrabold text-white mb-2">
+          Mushroom Name
+        </h2>
+
+        <!-- Description -->
+        <p id="res-desc" class="text-gray-300 text-sm sm:text-base leading-relaxed max-w-lg mx-auto mb-4">
+          Why this mushroom fits your exact routine.
+        </p>
+
+        <!-- Daily Shrooms Product Integration Note -->
+        <div class="bg-brand-primary/30 border border-brand-emerald/30 rounded-2xl p-4 mb-6 text-left flex items-start gap-3">
+          <div class="text-2xl">☕</div>
+          <div class="text-xs text-gray-300 leading-relaxed">
+            <strong class="text-brand-goldLight block mb-0.5">How to take with Daily Shrooms:</strong>
+            <span id="res-usage">Enjoy this ingredient in our 7-in-1 Smart Mushroom Coffee blend or concentrated liquid extracts for peak daily performance.</span>
+          </div>
+        </div>
+
+        <!-- Points Earned Alert -->
+        <div id="res-points-earned" class="text-emerald-400 font-bold text-base mb-6 flex items-center justify-center gap-2">
+          <span>🎉</span> <span id="res-points-text">+0 Points Earned!</span>
+        </div>
+
+        <!-- Shop Button -->
+        <a id="shop-btn" href="https://indigo-eagle-822909.hostingersite.com/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-gradient-to-r from-brand-gold to-yellow-500 hover:from-yellow-400 hover:to-brand-gold text-black font-extrabold text-sm uppercase tracking-wider px-8 py-3.5 rounded-full transition-all duration-300 shadow-lg hover:shadow-brand-gold/40 hover:-translate-y-0.5">
+          <span>Shop Recommended Mushroom</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </a>
+      </div>
+
+      <div id="discount-box" class="mt-6 pt-6 border-t border-brand-gold/20 hidden">
+        <div class="bg-emerald-950/40 border border-emerald-500/40 rounded-2xl p-4 text-center">
+          <div class="text-brand-goldLight font-bold text-sm uppercase tracking-wider mb-1">🎉 Coupon Unlocked!</div>
+          <p id="discount-text" class="text-xs text-gray-300 mb-2">You converted 50 points into ₹2 off.</p>
+          <div class="inline-block bg-black/60 border border-brand-gold/40 px-4 py-1.5 rounded-lg font-mono text-base font-bold text-brand-goldLight tracking-widest" id="coupon-code">
+            SHROOM2OFF
+          </div>
+          <div class="text-[10px] text-gray-400 mt-2">Use code at checkout on Daily Shrooms website.</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+      }
+
+      playClick() {
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(850, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(140, this.ctx.currentTime + 0.035);
+          
+          gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.035);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.035);
+        } catch(e){}
+      }
+
+      playFanfare() {
+        if (!this.ctx) return;
+        try {
+          const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99]; // Warm major arpeggio
+          notes.forEach((freq, i) => {
+            setTimeout(() => {
+              const osc = this.ctx.createOscillator();
+              const gain = this.ctx.createGain();
+
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+
+              gain.gain.setValueAtTime(0, this.ctx.currentTime);
+              gain.gain.linearRampToValueAtTime(0.18, this.ctx.currentTime + 0.04);
+              gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.45);
+
+              osc.connect(gain);
+              gain.connect(this.ctx.destination);
+              osc.start();
+              osc.stop(this.ctx.currentTime + 0.45);
+            }, i * 80);
+          });
+        } catch(e){}
+      }
+
+      playRedeemSound() {
+        if (!this.ctx) return;
+        try {
+          const notes = [523.25, 659.25, 783.99, 1046.50];
+          notes.forEach((freq, i) => {
+            setTimeout(() => {
+              const osc = this.ctx.createOscillator();
+              const gain = this.ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+              gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+              osc.connect(gain);
+              gain.connect(this.ctx.destination);
+              osc.start();
+              osc.stop(this.ctx.currentTime + 0.3);
+            }, i * 60);
+          });
+        } catch(e){}
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    const bgCanvas = document.getElementById('bg-particles');
+    const bgCtx = bgCanvas.getContext('2d');
+    let particles = [];
+
+    function resizeBg() {
+      bgCanvas.width = window.innerWidth;
+      bgCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeBg);
+    resizeBg();
+
+    class Particle {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * bgCanvas.width;
+        this.y = Math.random() * bgCanvas.height;
+        this.size = Math.random() * 2 + 0.5;
+        this.speedY = -(Math.random() * 0.35 + 0.1);
+        this.alpha = Math.random() * 0.5 + 0.1;
+      }
+      update() {
+        this.y += this.speedY;
+        if (this.y < 0) this.reset();
+      }
+      draw() {
+        bgCtx.fillStyle = `rgba(212, 175, 55, ${this.alpha})`;
+        bgCtx.beginPath();
+        bgCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        bgCtx.fill();
+      }
+    }
+
+    for (let i = 0; i < 45; i++) particles.push(new Particle());
+
+    function animateBg() {
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      requestAnimationFrame(animateBg);
+    }
+    animateBg();
+
+    const lifestyleData = [
+      {
+        lifestyle: "High-Stress Hustler",
+        shroom: "Reishi",
+        fullName: "Reishi (Ganoderma lucidum)",
+        icon: "🧘‍♂️",
+        desc: "Known as the 'Queen of Mushrooms', Reishi naturally promotes deep stress relief, calms the nervous system, and improves sleep quality after demanding days.",
+        usage: "Ideal for evening coffee brews or nighttime wellness drops to unwind.",
+        color1: "#1d2e24", color2: "#0e1812"
+      },
+      {
+        lifestyle: "Late-Night Creator",
+        shroom: "Lion's Mane",
+        fullName: "Lion's Mane (Hericium erinaceus)",
+        icon: "🧠",
+        desc: "Powers mental clarity, enhances NGF (Nerve Growth Factor) synthesis, and sharpens focus for extended flow states without jittery crashes.",
+        usage: "Perfect in your morning Daily Shrooms coffee for cognitive stamina.",
+        color1: "#2d4a3e", color2: "#192c24"
+      },
+      {
+        lifestyle: "Fitness & Athletics",
+        shroom: "Cordyceps",
+        fullName: "Cordyceps (Cordyceps militaris)",
+        icon: "⚡",
+        desc: "Boosts cellular ATP energy production, oxygen uptake, and endurance. Elevates physical performance and post-workout stamina.",
+        usage: "Take 30 minutes before workouts or morning activity for sustained physical drive.",
+        color1: "#3a5b4a", color2: "#20362b"
+      },
+      {
+        lifestyle: "Daily Immunity Guard",
+        shroom: "Chaga",
+        fullName: "Chaga (Inonotus obliquus)",
+        icon: "🛡️",
+        desc: "Packed with massive antioxidant levels to neutralize free radicals, support cellular defense, and fortify your immune system daily.",
+        usage: "Sip daily with your hot coffee or brew to maintain resilient health.",
+        color1: "#1e382b", color2: "#0f1f17"
+      },
+      {
+        lifestyle: "Gut & Digestion Wellness",
+        shroom: "Turkey Tail",
+        fullName: "Turkey Tail (Trametes versicolor)",
+        icon: "🌱",
+        desc: "Rich in prebiotic beta-glucans and polysaccharopeptides that nourish beneficial gut bacteria, aiding smooth digestion and microbiome balance.",
+        usage: "Integrates seamlessly with daily routines for core digestive harmony.",
+        color1: "#2b4538", color2: "#16271e"
+      },
+      {
+        lifestyle: "Glow & Beauty Seeker",
+        shroom: "Shiitake",
+        fullName: "Shiitake (Lentinula edodes)",
+        icon: "✨",
+        desc: "Abundant in natural eritadenine, copper, and zinc that support collagen production, radiant glowing skin, and cardiovascular vitality.",
+        usage: "Enhances your daily beauty and longevity regimen naturally.",
+        color1: "#345545", color2: "#1d3329"
+      },
+      {
+        lifestyle: "Balanced Biohacker",
+        shroom: "Maitake",
+        fullName: "Maitake (Grifola frondosa)",
+        icon: "⚖️",
+        desc: "Known as the 'Dancing Mushroom', Maitake supports healthy blood sugar metabolism, insulin sensitivity, and overall daily physiological balance.",
+        usage: "Great before meals or as part of your daily smart coffee ritual.",
+        color1: "#243b2f", color2: "#122119"
+      }
+    ];
+
+    let userPoints = parseInt(localStorage.getItem('shroomPoints')) || 0;
+    const canvas = document.getElementById("wheel");
+    const ctx = canvas.getContext("2d");
+    const numSegments = lifestyleData.length;
+    const anglePerSegment = (2 * Math.PI) / numSegments;
+    let currentAngle = 0;
+    let isSpinning = false;
+    let lastSegmentIndex = -1;
+
+    document.getElementById("points-display").innerText = userPoints;
+
+    function drawWheel() {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = canvas.width / 2 - 12;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < numSegments; i++) {
+        const startAngle = currentAngle + i * anglePerSegment;
+        const endAngle = startAngle + anglePerSegment;
+
+        // Radial Gradient Slices
+        const grad = ctx.createRadialGradient(centerX, centerY, 25, centerX, centerY, radius);
+        grad.addColorStop(0, lifestyleData[i].color1);
+        grad.addColorStop(1, lifestyleData[i].color2);
+
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Metallic Borders
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "rgba(212, 175, 55, 0.4)";
+        ctx.stroke();
+
+        // Text Labels
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(startAngle + anglePerSegment / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#fef1b8";
+        ctx.font = "bold 10.5px 'Plus Jakarta Sans', sans-serif";
+        ctx.shadowColor = "rgba(0,0,0,0.9)";
+        ctx.shadowBlur = 4;
+        ctx.fillText(lifestyleData[i].lifestyle.toUpperCase(), radius - 18, 4);
+        ctx.restore();
+      }
+
+      // Outer Gold Rim
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "#d4af37";
+      ctx.stroke();
+
+      // Center Cap
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 26, 0, Math.PI * 2);
+      const capGrad = ctx.createLinearGradient(centerX - 26, centerY - 26, centerX + 26, centerY + 26);
+      capGrad.addColorStop(0, "#fef1b8");
+      capGrad.addColorStop(0.5, "#d4af37");
+      capGrad.addColorStop(1, "#4d3807");
+      ctx.fillStyle = capGrad;
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#ffffff";
+      ctx.stroke();
+    }
+
+    drawWheel();
+
+    function spinWheel() {
+      sound.init();
+      if (isSpinning) return;
+      isSpinning = true;
+
+      document.getElementById("spin-btn").disabled = true;
+      const resCard = document.getElementById("result-card");
+      resCard.classList.add("hidden");
+      resCard.classList.remove("opacity-100", "translate-y-0");
+      resCard.classList.add("opacity-0", "translate-y-6");
+      document.getElementById("discount-box").classList.add("hidden");
+
+      const totalRotation = Math.PI * 2 * (6 + Math.random() * 4); // 6-10 full spins
+      const spinDuration = 5200; // 5.2s deceleration
+      const start = performance.now();
+      const initialAngle = currentAngle;
+
+      function animate(time) {
+        const elapsed = time - start;
+        const progress = Math.min(elapsed / spinDuration, 1);
+
+        // Cubic Ease-Out
+        const easeOut = 1 - Math.pow(1 - progress, 4);
+        currentAngle = initialAngle + easeOut * totalRotation;
+
+        // Pointer Tick Audio Trigger
+        const normalizedAngle = (2 * Math.PI - (currentAngle % (2 * Math.PI))) % (2 * Math.PI);
+        const adjustedAngle = (normalizedAngle + Math.PI / 2) % (2 * Math.PI);
+        const currentSegmentIndex = Math.floor(adjustedAngle / anglePerSegment);
+
+        if (currentSegmentIndex !== lastSegmentIndex) {
+          sound.playClick();
+          triggerPointerKick();
+          lastSegmentIndex = currentSegmentIndex;
+        }
+
+        drawWheel();
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          isSpinning = false;
+          document.getElementById("spin-btn").disabled = false;
+          showResult(currentSegmentIndex);
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    function triggerPointerKick() {
+      const pointer = document.getElementById("pointer");
+      pointer.style.transform = "rotate(-22deg)";
+      setTimeout(() => { pointer.style.transform = "rotate(0deg)"; }, 60);
+    }
+
+    function showResult(index) {
+      sound.playFanfare();
+      const result = lifestyleData[index];
+
+      // Random Points award (10 to 30)
+      const pointsEarned = Math.floor(Math.random() * 21) + 10;
+      userPoints += pointsEarned;
+      localStorage.setItem('shroomPoints', userPoints);
+      document.getElementById("points-display").innerText = userPoints;
+
+      // Update Card Content
+      document.getElementById("res-lifestyle-badge").innerText = `MATCHED LIFESTYLE: ${result.lifestyle}`;
+      document.getElementById("res-icon").innerText = result.icon;
+      document.getElementById("res-shroom-title").innerText = result.fullName;
+      document.getElementById("res-desc").innerText = result.desc;
+      document.getElementById("res-usage").innerText = result.usage;
+      document.getElementById("res-points-text").innerText = `+${pointsEarned} Points Earned!`;
+
+      // Show Card with smooth animation
+      const resCard = document.getElementById("result-card");
+      resCard.classList.remove("hidden");
+      setTimeout(() => {
+        resCard.classList.remove("opacity-0", "translate-y-6");
+        resCard.classList.add("opacity-100", "translate-y-0");
+      }, 50);
+    }
+
+    function redeemPoints() {
+      sound.init();
+      if (userPoints < 50) {
+        alert(`You currently have ${userPoints} points. You need at least 50 points to convert into a ₹2 discount coupon!`);
+        return;
+      }
+
+      const discountUnits = Math.floor(userPoints / 50);
+      const discountAmount = discountUnits * 2;
+      const spentPoints = discountUnits * 50;
+
+      userPoints -= spentPoints;
+      localStorage.setItem('shroomPoints', userPoints);
+      document.getElementById("points-display").innerText = userPoints;
+
+      sound.playRedeemSound();
+
+      const couponCode = `SHROOM${discountAmount}OFF_${Math.floor(1000 + Math.random() * 9000)}`;
+
+      document.getElementById("discount-text").innerText = `Converted ${spentPoints} points into ₹${discountAmount} off your purchase.`;
+      document.getElementById("coupon-code").innerText = couponCode;
+      
+      const resCard = document.getElementById("result-card");
+      resCard.classList.remove("hidden");
+      resCard.classList.remove("opacity-0", "translate-y-6");
+      resCard.classList.add("opacity-100", "translate-y-0");
+      
+      document.getElementById("discount-box").classList.remove("hidden");
+    }
+  </script>
+</body>
+</html>
